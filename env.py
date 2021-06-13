@@ -17,6 +17,7 @@ class TicTacToe(object):
         input: これから打つ升目
         return: フィールドの状況, 報酬, 終了フラグ, どっちのターンだったか, 進行したか
         '''
+        # TODO: 負けが確定した場合はsimulationの方で-1.0の報酬を与えること
         # CROSS is first
         if (self.step_count % 2 == 0):
             square_state = SquareState.CROSS
@@ -25,7 +26,7 @@ class TicTacToe(object):
 
         if (self.field[action] != SquareState.NOTHING):
             # すでに打たれている升目を選択した場合
-            return (TicTacToe._enum_to_number(self.field), 0.0, False, square_state, False)
+            return (TicTacToe._enum_to_number(self.field), -2.0, False, square_state, False)
 
         self.field[action] = square_state
 
