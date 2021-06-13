@@ -3,7 +3,7 @@ import enum
 import numpy as np
 import random
 
-ActionResult = (np.ndarray, float, bool, enum)
+ActionResult = (np.ndarray, float, bool, enum, bool)
 
 class TicTacToe(object):
     def __init__(self, length=3) -> None:
@@ -13,15 +13,21 @@ class TicTacToe(object):
         self.step_count = 0
 
     def step(self, action) -> ActionResult:
+        '''
+        input: これから打つ升目
+        return: フィールドの状況, 報酬, 終了フラグ, どっちのターンだったか, 進行したか
+        '''
         # CROSS is first
         if (self.step_count % 2 == 0):
             square_state = SquareState.CROSS
         else:
             square_state = SquareState.CIRCLE
 
-        target_index = np.where(self.field == SquareState.NOTHING)[0][action]
+        if (self.field[action] != SquareState.NOTHING):
+            # すでに打たれている升目を選択した場合
+            return (TicTacToe._enum_to_number(self.field), 0.0, False, square_state, False)
 
-        self.field[target_index] = square_state
+        self.field[action] = square_state
 
         result_status = self._check(square_state)
 
@@ -38,7 +44,7 @@ class TicTacToe(object):
             done = False
 
         self.step_count += 1
-        return (TicTacToe._enum_to_number(self.field), reward, done, square_state)
+        return (TicTacToe._enum_to_number(self.field), reward, done, square_state, True)
 
     def reset(self) -> np.ndarray:
         self.field = np.array([SquareState.NOTHING for _ in range(self.row*self.col)])
@@ -47,6 +53,9 @@ class TicTacToe(object):
 
     def get_available_select_action_num(self) -> int:
         return len(np.where(self.field == SquareState.NOTHING)[0])
+
+    def get_field(self):
+        return TicTacToe._enum_to_number(self.field)
 
     def easy_display(self) -> None:
         for r in range(self.row):
@@ -132,7 +141,8 @@ def main():
         step_count += 1
         action_num = env.get_available_select_action_num()
         chose_action = random.randrange(action_num)
-        _, reward, done, kind = env.step(chose_action)
+        target_index = np.where(env.get_field() == SquareState.NOTHING.value)[0][chose_action]
+        _, reward, done, kind, _ = env.step(target_index)
         print("{} step".format(step_count))
         env.easy_display()
         print("")
