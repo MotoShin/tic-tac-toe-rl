@@ -11,6 +11,7 @@ class TicTacToe(object):
         self.col = length
         self.field = np.array([SquareState.NOTHING for _ in range(self.row*self.col)])
         self.step_count = 0
+        self.action_num = length * length
 
     def step(self, action) -> ActionResult:
         '''

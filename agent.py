@@ -17,7 +17,8 @@ class Agent(object):
         self.memory = ReplayBuffer(NUM_REPLAY_BUFFER)
 
         self.behavior_policy = Egreedy(action_num=action_num, eps_time_steps=EPS_TIMESTEPS, eps_start=EPS_START, eps_end=EPS_END)
-        self.target_policy = Greedy()
+        self.target_policy = Greedy
+        self.learning_count = 0
 
     def learning(self) -> None:
         if not self.memory.can_sample(BATCH_SIZE):
@@ -25,14 +26,14 @@ class Agent(object):
 
         obs_batch, act_batch, rew_batch, next_obs_batch, done_mask = self.memory.sample(BATCH_SIZE)
 
-        obs_batch = Variable(obs_batch)
-        act_batch = Variable(act_batch)
-        rew_batch = Variable(rew_batch)
-        next_obs_batch = Variable(next_obs_batch)
-        not_done_mask = Variable(1 - done_mask)
+        obs_batch = Variable(torch.from_numpy(obs_batch))
+        act_batch = Variable(torch.from_numpy(act_batch))
+        rew_batch = Variable(torch.from_numpy(rew_batch))
+        next_obs_batch = Variable(torch.from_numpy(next_obs_batch))
+        not_done_mask = Variable(torch.from_numpy(1 - done_mask))
 
         # Q values
-        current_Q_values = self.value_net(obs_batch).gather(1, act_batch.unsqueeze(1)).squeeze(1)
+        current_Q_values = self.value_net(NetworkUtil.to_binary(obs_batch)).gather(1, act_batch.unsqueeze(1)).squeeze(1)
         # target Q values
         next_max_Q = self.target_policy.select(self.target_net(NetworkUtil.to_binary(next_obs_batch)))
         next_Q_values = not_done_mask * next_max_Q
@@ -48,15 +49,22 @@ class Agent(object):
         current_Q_values.backward(d_error.data)
         self.optimizer.step()
 
+        if self.learning_count % 100:
+            self.update_target_network()
+        self.learning_count += 1
+
     def update_target_network(self) -> None:
         self.target_net.load_state_dict(self.value_net.state_dict())
 
     def save_memory(self, state, action, reward, next_state, done) -> None:
         self.memory.append(state, action, reward, next_state, done)
 
+    def change_last_reward(self, reward) -> None:
+        self.memory.reward[-1] = reward
+
     def select(self, state) -> int:
         with torch.no_grad():
-            state = Variable(state)
+            state = Variable(torch.from_numpy(state))
             output = self.value_net(NetworkUtil.to_binary(state))
         return self.behavior_policy.select(output)
 
