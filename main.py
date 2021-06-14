@@ -7,28 +7,25 @@ from tqdm import trange
 class LeraningSimulation(object):
     def __init__(self) -> None:
         self.env = TicTacToe()
-        self.agents = {"Cross": Agent(self.env.action_num), "Circle": Agent(self.env.action_num)}
+        self.agents = {"Cross": Agent(), "Circle": Agent()}
         self.state = None
         self.result = []
         self.sim_result = []
 
     def start(self):
         for sim in trange(SIMULATION_NUM, desc='simulation loop'):
-            self.agents = {"Cross": Agent(self.env.action_num), "Circle": Agent(self.env.action_num)}
+            self.agents = {"Cross": Agent(), "Circle": Agent()}
             self.state = self.env.reset()
             self.sim_result = []
             self.one_simulation()
             self.result.append(self.sim_result)
 
     def one_simulation(self):
-        for epi in trange(EPISODE_NUM, desc='episode loop'):
-            is_step_done = False
-            while not is_step_done:
-                action = self.agents["Cross"].select(self.state)
-                next_state, reward, done, _, is_step_done = self.env.step(action)
-                self.agents["Cross"].save_memory(self.state, action, reward, next_state, done)
-                if not is_step_done:
-                    self.agents["Cross"].learning()
+        for epi in trange(EPISODE_NUM, desc='episode loop', leave=False):
+            # 先行はバツ
+            action = self.agents["Cross"].select(self.state, self.env.get_available_select_action())
+            next_state, reward, done, _ = self.env.step(action)
+            self.agents["Cross"].save_memory(self.state, action, reward, next_state, done)
 
             if done:
                 # 引き分けは1
@@ -47,13 +44,10 @@ class LeraningSimulation(object):
 
             self.state = next_state
 
-            is_step_done = False
-            while not is_step_done:
-                action = self.agents["Circle"].select(self.state)
-                next_state, reward, done, _, is_step_done = self.env.step(action)
-                self.agents["Circle"].save_memory(self.state, action, reward, next_state, done)
-                if not is_step_done:
-                    self.agents["Circle"].learning()
+            # 後攻はマル
+            action = self.agents["Circle"].select(self.state, self.env.get_available_select_action())
+            next_state, reward, done, _ = self.env.step(action)
+            self.agents["Circle"].save_memory(self.state, action, reward, next_state, done)
 
             if done:
                 # 引き分けは1

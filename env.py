@@ -16,18 +16,13 @@ class TicTacToe(object):
     def step(self, action) -> ActionResult:
         '''
         input: これから打つ升目
-        return: フィールドの状況, 報酬, 終了フラグ, どっちのターンだったか, 進行したか
+        return: フィールドの状況, 報酬, 終了フラグ, どっちのターンだったか
         '''
-        # TODO: 負けが確定した場合はsimulationの方で-1.0の報酬を与えること
         # CROSS is first
         if (self.step_count % 2 == 0):
             square_state = SquareState.CROSS
         else:
             square_state = SquareState.CIRCLE
-
-        if (self.field[action] != SquareState.NOTHING):
-            # すでに打たれている升目を選択した場合
-            return (TicTacToe._enum_to_number(self.field), -2.0, False, square_state, False)
 
         self.field[action] = square_state
 
@@ -46,15 +41,15 @@ class TicTacToe(object):
             done = False
 
         self.step_count += 1
-        return (TicTacToe._enum_to_number(self.field), reward, done, square_state, True)
+        return (TicTacToe._enum_to_number(self.field), reward, done, square_state)
 
     def reset(self) -> np.ndarray:
         self.field = np.array([SquareState.NOTHING for _ in range(self.row*self.col)])
         self.step_count = 0
         return TicTacToe._enum_to_number(self.field)
 
-    def get_available_select_action_num(self) -> int:
-        return len(np.where(self.field == SquareState.NOTHING)[0])
+    def get_available_select_action(self) -> list:
+        return np.where(self.field == SquareState.NOTHING)[0]
 
     def get_field(self):
         return TicTacToe._enum_to_number(self.field)
@@ -141,7 +136,7 @@ def main():
     step_count = 0
     while not done:
         step_count += 1
-        action_num = env.get_available_select_action_num()
+        action_num = len(env.get_available_select_action())
         chose_action = random.randrange(action_num)
         target_index = np.where(env.get_field() == SquareState.NOTHING.value)[0][chose_action]
         _, reward, done, kind, _ = env.step(target_index)

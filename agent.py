@@ -10,13 +10,13 @@ from setting import *
 SAMPLE = (list, list, list, list)
 
 class Agent(object):
-    def __init__(self, action_num) -> None:
+    def __init__(self) -> None:
         self.value_net = NetworkUtil.initialize(DqnNetwork())
         self.target_net = NetworkUtil.copy_param(self.value_net, DqnNetwork())
         self.optimizer = optim.RMSprop(self.value_net.parameters(), lr=NW_LEARNING_RATE, alpha=NW_ALPHA, eps=NW_EPS)
         self.memory = ReplayBuffer(NUM_REPLAY_BUFFER)
 
-        self.behavior_policy = Egreedy(action_num=action_num, eps_time_steps=EPS_TIMESTEPS, eps_start=EPS_START, eps_end=EPS_END)
+        self.behavior_policy = Egreedy(eps_time_steps=EPS_TIMESTEPS, eps_start=EPS_START, eps_end=EPS_END)
         self.target_policy = Greedy
         self.learning_count = 0
 
@@ -62,11 +62,11 @@ class Agent(object):
     def change_last_reward(self, reward) -> None:
         self.memory.reward[-1] = reward
 
-    def select(self, state) -> int:
+    def select(self, state, available_select_action) -> int:
         with torch.no_grad():
             state = Variable(torch.from_numpy(state))
             output = self.value_net(NetworkUtil.to_binary(state))
-        return self.behavior_policy.select(output)
+        return self.behavior_policy.select(torch.stack([output[0][available_select_action]], dim=0))
 
 
 class ReplayBuffer(object):
@@ -118,9 +118,8 @@ class Greedy(object):
         return lst.detach().max(1)[0]
 
 class Egreedy(object):
-    def __init__(self, action_num, eps_time_steps, eps_start, eps_end) -> None:
+    def __init__(self, eps_time_steps, eps_start, eps_end) -> None:
         self.select_count = 0
-        self.action_num = action_num
         
         self.eps_time_steps = eps_time_steps
         self.eps_start = eps_start
@@ -133,7 +132,7 @@ class Egreedy(object):
         if sample > value:
             selected = Greedy.select(lst)
         else:
-            selected = random.randrange(self.action_num)
+            selected = random.randrange(len(lst[0]))
 
         self.select_count += 1
         return selected
