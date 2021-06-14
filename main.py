@@ -34,13 +34,9 @@ class LeraningSimulation(object):
             result = 1
 
             # 先行はバツ
-            # print(self.env.get_available_select_action())
             action = self.agents["Cross"].select(self.state, self.env.get_available_select_action())
-            # print(action)
             next_state, reward, done, _ = self.env.step(action)
             self.agents["Cross"].save_memory(self.state, action, reward, next_state, done)
-            # self.env.easy_display()
-            # print()
 
             if done:
                 if reward == 2.0:
@@ -58,13 +54,9 @@ class LeraningSimulation(object):
             self.state = next_state
 
             # 後攻はマル
-            # print(self.env.get_available_select_action())
             action = self.agents["Circle"].select(self.state, self.env.get_available_select_action())
-            # print(action)
             next_state, reward, done, _ = self.env.step(action)
             self.agents["Circle"].save_memory(self.state, action, reward, next_state, done)
-            # self.env.easy_display()
-            # print()
 
             if done:
                 if reward == 2.0:
