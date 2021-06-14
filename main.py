@@ -1,5 +1,6 @@
 from agent import Agent
 from env import TicTacToe
+import pandas as pd
 from setting import *
 from tqdm import trange
 
@@ -9,34 +10,46 @@ class LeraningSimulation(object):
         self.env = TicTacToe()
         self.agents = {"Cross": Agent(), "Circle": Agent()}
         self.state = None
-        self.result = []
         self.sim_result = []
 
     def start(self):
+        result = []
         for sim in trange(SIMULATION_NUM, desc='simulation loop'):
             self.agents = {"Cross": Agent(), "Circle": Agent()}
-            self.state = self.env.reset()
             self.sim_result = []
-            self.one_simulation()
-            self.result.append(self.sim_result)
+            self._one_simulation()
+            result.append(self.sim_result)
+        print("row: {}, col: {}".format(len(result), len(result[0])))
+        self._make_csv(result, "result", "result.csv")
 
-    def one_simulation(self):
+    def _one_simulation(self):
         for epi in trange(EPISODE_NUM, desc='episode loop', leave=False):
+            self.state = self.env.reset()
+            self.sim_result.append(self._one_episode(epi))
+
+    def _one_episode(self, epi):
+        done = False
+        while not done:
+            # 引き分けなら1
+            result = 1
+
             # 先行はバツ
+            # print(self.env.get_available_select_action())
             action = self.agents["Cross"].select(self.state, self.env.get_available_select_action())
+            # print(action)
             next_state, reward, done, _ = self.env.step(action)
             self.agents["Cross"].save_memory(self.state, action, reward, next_state, done)
+            # self.env.easy_display()
+            # print()
 
             if done:
-                # 引き分けは1
-                self.sim_result.append(1)
-                if reward == 1.0:
+                if reward == 2.0:
                     # バツが勝つと0
-                    self.sim_result.append(0)
+                    result = 0
                     self.agents["Circle"].change_last_reward(-1.0)
                 self.agents["Cross"].learning()
                 self.agents["Circle"].learning()
-                continue
+                return result
 
             if epi == 0:
                 # 初回はなにも行動していないので学習もしない
@@ -45,24 +58,45 @@ class LeraningSimulation(object):
             self.state = next_state
 
             # 後攻はマル
+            # print(self.env.get_available_select_action())
             action = self.agents["Circle"].select(self.state, self.env.get_available_select_action())
+            # print(action)
             next_state, reward, done, _ = self.env.step(action)
             self.agents["Circle"].save_memory(self.state, action, reward, next_state, done)
+            # self.env.easy_display()
+            # print()
 
             if done:
-                # 引き分けは1
-                self.sim_result.append(1)
-                if reward == 1.0:
+                if reward == 2.0:
                     # マルが勝つと2
-                    self.sim_result.append(2)
+                    result = 2
                     self.agents["Cross"].change_last_reward(-1.0)
                 self.agents["Cross"].learning()
                 self.agents["Circle"].learning()
-                continue
+                return result
 
             self.agents["Cross"].learning()
 
             self.state = next_state
+
+    def _make_csv(self, lst, kind, file_name):
+        csv_lst = []
+        cols = ['episode']
+        simulation_num = len(lst)
+        episode_num = len(lst[0])
+
+        for sim in range(simulation_num):
+            cols.append("{}sim_{}".format(sim+1, kind))
+
+        for epi in range(episode_num):
+            one_line = [epi+1]
+            for sim in range(simulation_num):
+                one_line.append(lst[sim][epi])
+            csv_lst.append(one_line)
+
+        df = pd.DataFrame(csv_lst, columns=cols)
+        df.to_csv('output/' + file_name, index=False)
+
 
 if __name__ == '__main__':
     LeraningSimulation().start()

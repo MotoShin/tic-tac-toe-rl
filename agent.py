@@ -66,7 +66,9 @@ class Agent(object):
         with torch.no_grad():
             state = Variable(torch.from_numpy(state))
             output = self.value_net(NetworkUtil.to_binary(state))
-        return self.behavior_policy.select(torch.stack([output[0][available_select_action]], dim=0))
+        available = output[0][available_select_action]
+        selected = self.behavior_policy.select(torch.stack([available], dim=0))
+        return (output == available[selected])[0].nonzero().item()
 
 
 class ReplayBuffer(object):
