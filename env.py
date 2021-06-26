@@ -138,8 +138,8 @@ def main():
         step_count += 1
         action_num = len(env.get_available_select_action())
         chose_action = random.randrange(action_num)
-        target_index = np.where(env.get_field() == SquareState.NOTHING.value)[0][chose_action]
-        _, reward, done, kind, _ = env.step(target_index)
+        target_index = env.get_available_select_action()[chose_action]
+        _, reward, done, kind = env.step(target_index)
         print("{} step".format(step_count))
         env.easy_display()
         print("")

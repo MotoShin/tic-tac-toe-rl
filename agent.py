@@ -71,6 +71,11 @@ class Agent(object):
         return (output == available[selected])[0].nonzero().item()
 
 
+class RandomAgent(object):
+    def select(self, state, available_select_action) -> int:
+        return random.choice(available_select_action)
+
+
 class ReplayBuffer(object):
     def __init__(self, size) -> None:
         self.size = size
