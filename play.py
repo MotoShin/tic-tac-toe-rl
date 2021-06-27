@@ -18,7 +18,7 @@ class PointInfo(object):
         self.y_range = range(y - size, y + size)
         self.state = SquareState.NOTHING
 
-    def isSetting(self) -> bool:
+    def isBlank(self) -> bool:
         return self.state == SquareState.NOTHING
 
 def main():
@@ -72,7 +72,7 @@ def main():
             if event.type == MOUSEBUTTONDOWN and event.button == 1:
                 x, y = event.pos
                 for f in field:
-                    if f.state == SquareState.NOTHING and x in f.x_range and y in f.y_range:
+                    if f.isBlank() and x in f.x_range and y in f.y_range:
                         f.state = input_state
                         if input_state == SquareState.CROSS:
                             input_state = SquareState.CIRCLE
