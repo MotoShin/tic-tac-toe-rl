@@ -3,7 +3,7 @@ from pygame.locals import *
 import sys
 import time
 from env import SquareState, TicTacToe
-from agent import RandomAgent
+from agent import RandomAgent, TestAgent
 
 SCREEN_SIZE = 800
 PADDING_SIZE = 10
@@ -26,8 +26,10 @@ class PointInfo(object):
 def main():
     field_size = 3
     env = TicTacToe(field_size)
-    env.reset()
-    agent = RandomAgent()
+    state = env.reset()
+    # agent = RandomAgent()
+    agent = TestAgent("output/circle.pth")
+    # agent = TestAgent("output/cross.pth")
 
     # フィールド情報の初期化
     field = []

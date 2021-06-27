@@ -49,7 +49,7 @@ class Agent(object):
         current_Q_values.backward(d_error.data)
         self.optimizer.step()
 
-        if self.learning_count % 100:
+        if self.learning_count % 100 == 0:
             self.update_target_network()
         self.learning_count += 1
 
@@ -70,10 +70,28 @@ class Agent(object):
         selected = self.behavior_policy.select(torch.stack([available], dim=0))
         return (output == available[selected])[0].nonzero().item()
 
+    def save(self, kind) -> None:
+        torch.save(self.value_net.state_dict(), "output/{}.pth".format(kind))
+
 
 class RandomAgent(object):
     def select(self, state, available_select_action) -> int:
         return random.choice(available_select_action)
+
+
+class TestAgent(object):
+    def __init__(self, path) -> None:
+        self.value_net = NetworkUtil.initialize(DqnNetwork())
+        self.value_net.load_state_dict(torch.load(path, map_location=DEVICE))
+        self.policy = Greedy
+
+    def select(self, state, available_select_action) -> int:
+        with torch.no_grad():
+            state = Variable(torch.from_numpy(state))
+            output = self.value_net(NetworkUtil.to_binary(state))
+        available = output[0][available_select_action]
+        selected = self.policy.select(torch.stack([available], dim=0))
+        return (output == available[selected])[0].nonzero().item()
 
 
 class ReplayBuffer(object):

@@ -19,8 +19,9 @@ class LeraningSimulation(object):
             self.sim_result = []
             self._one_simulation()
             result.append(self.sim_result)
-        print("row: {}, col: {}".format(len(result), len(result[0])))
         self._make_csv(result, "result", "result.csv")
+        self.agents["Cross"].save("cross")
+        self.agents["Circle"].save("circle")
 
     def _one_simulation(self):
         for epi in trange(EPISODE_NUM, desc='episode loop', leave=False):
