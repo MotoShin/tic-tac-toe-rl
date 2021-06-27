@@ -1,7 +1,9 @@
 import pygame
 from pygame.locals import *
 import sys
-from env import SquareState
+import time
+from env import SquareState, TicTacToe
+from agent import RandomAgent
 
 SCREEN_SIZE = 800
 PADDING_SIZE = 10
@@ -23,6 +25,9 @@ class PointInfo(object):
 
 def main():
     field_size = 3
+    env = TicTacToe(field_size)
+    env.reset()
+    agent = RandomAgent()
 
     # フィールド情報の初期化
     field = []
@@ -47,6 +52,7 @@ def main():
     pygame.display.set_caption("TicTacToe")
 
     input_state = SquareState.CROSS
+    done = False
     while(True):
         # 画面の塗り潰し
         screen.fill(BACK_GROUND_COLOR)
@@ -67,17 +73,24 @@ def main():
 
         # 画面を更新
         pygame.display.update()
+
+        # agentの行動
+        if input_state == SquareState.CIRCLE and not done:
+            time.sleep(1)
+            action = agent.select(state, env.get_available_select_action())
+            state, _, done, _ = env.step(action)
+            field[action].state = SquareState.CIRCLE
+            input_state = SquareState.CROSS
+
         for event in pygame.event.get():
             # クリックしたら座標に記号を入力する
-            if event.type == MOUSEBUTTONDOWN and event.button == 1:
+            if event.type == MOUSEBUTTONDOWN and event.button == 1 and input_state == SquareState.CROSS and not done:
                 x, y = event.pos
-                for f in field:
-                    if f.isBlank() and x in f.x_range and y in f.y_range:
-                        f.state = input_state
-                        if input_state == SquareState.CROSS:
-                            input_state = SquareState.CIRCLE
-                        else:
-                            input_state = SquareState.CROSS
+                for n in range(len(field)):
+                    if field[n].isBlank() and x in field[n].x_range and y in field[n].y_range:
+                        field[n].state = input_state
+                        state, _, done, _ = env.step(n)
+                        input_state = SquareState.CIRCLE
                         break
 
             # バツ押したら終了

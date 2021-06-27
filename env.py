@@ -3,7 +3,7 @@ import enum
 import numpy as np
 import random
 
-ActionResult = (np.ndarray, float, bool, enum, bool)
+ActionResult = (np.ndarray, float, bool, enum)
 
 class TicTacToe(object):
     def __init__(self, length=3) -> None:
