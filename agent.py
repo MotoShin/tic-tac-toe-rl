@@ -2,6 +2,7 @@ import numpy as np
 import random
 import torch
 import torch.optim as optim
+import torch.nn.functional as F
 
 from collections import deque
 from network import DqnNetwork, NetworkUtil, Variable
@@ -13,7 +14,7 @@ class Agent(object):
     def __init__(self) -> None:
         self.value_net = NetworkUtil.initialize(DqnNetwork())
         self.target_net = NetworkUtil.copy_param(self.value_net, DqnNetwork())
-        self.optimizer = optim.RMSprop(self.value_net.parameters(), lr=NW_LEARNING_RATE, alpha=NW_ALPHA, eps=NW_EPS)
+        self.optimizer = optim.Adam(self.value_net.parameters(), lr=NW_LEARNING_RATE, eps=NW_EPS)
         self.memory = ReplayBuffer(NUM_REPLAY_BUFFER)
 
         self.behavior_policy = Egreedy(eps_time_steps=EPS_TIMESTEPS, eps_start=EPS_START, eps_end=EPS_END)
@@ -33,20 +34,20 @@ class Agent(object):
         not_done_mask = Variable(torch.from_numpy(1 - done_mask))
 
         # Q values
+        self.value_net.eval()
         current_Q_values = self.value_net(NetworkUtil.to_binary(obs_batch)).gather(1, act_batch.unsqueeze(1)).squeeze(1)
         # target Q values
+        self.target_net.eval()
         next_max_Q = self.target_policy.select(self.target_net(NetworkUtil.to_binary(next_obs_batch)))
         next_Q_values = not_done_mask * next_max_Q
         target_Q_values = rew_batch + (GAMMA * next_Q_values)
-        # compute bellman error
-        bellman_error = target_Q_values - current_Q_values
-        # clip the bellman error between [-1, 1]
-        clipped_bellman_error = bellman_error.clamp(-1, 1)
-        d_error = clipped_bellman_error * -1.0
+        # loss
+        self.value_net.train()
+        loss = F.smooth_l1_loss(current_Q_values.float(), target_Q_values.float())
 
         # optimize
         self.optimizer.zero_grad()
-        current_Q_values.backward(d_error.data)
+        loss.backward()
         self.optimizer.step()
 
         if self.learning_count % 100 == 0:
@@ -68,7 +69,8 @@ class Agent(object):
             output = self.value_net(NetworkUtil.to_binary(state))
         available = output[0][available_select_action]
         selected = self.behavior_policy.select(torch.stack([available], dim=0))
-        return (output == available[selected])[0].nonzero().item()
+        mask = torch.tensor([n in available_select_action for n in range(len(output[0]))])
+        return torch.logical_and((output == available[selected])[0], mask).nonzero().item()
 
     def save(self, kind) -> None:
         torch.save(self.value_net.state_dict(), "output/{}.pth".format(kind))
