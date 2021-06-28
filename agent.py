@@ -33,6 +33,10 @@ class Agent(object):
         next_obs_batch = Variable(torch.from_numpy(next_obs_batch))
         not_done_mask = Variable(torch.from_numpy(1 - done_mask))
 
+        if torch.cuda.is_available():
+            act_batch = act_batch.cuda()
+            rew_batch = rew_batch.cuda()
+
         # Q values
         self.value_net.eval()
         current_Q_values = self.value_net(NetworkUtil.to_binary(obs_batch)).gather(1, act_batch.unsqueeze(1)).squeeze(1)
