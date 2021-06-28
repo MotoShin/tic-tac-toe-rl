@@ -32,10 +32,13 @@ class NetworkUtil(object):
         to.to(device=DEVICE)
         return to
 
-    def to_binary(lst: torch.Tensor) -> torch.tensor:
+    def to_binary(lst: torch.Tensor) -> torch.Tensor:
         mask = 2 ** torch.arange(2).to(lst.device, lst.dtype)
         binary = lst.unsqueeze(-1).bitwise_and(mask).ne(0).byte()
-        return Variable(torch.reshape(binary, (-1, FIELD_SIZE * FIELD_SIZE * 2)).float())
+        result = torch.reshape(binary, (-1, FIELD_SIZE * FIELD_SIZE * 2)).float()
+        if torch.cuda.is_available():
+            result = result.cuda()
+        return result
 
 class Variable(autograd.Variable):
     def __init__(self, data, *args, **kwargs) -> None:
