@@ -69,16 +69,24 @@ class Agent(object):
             output = self.value_net(NetworkUtil.to_binary(state))
         available = output[0][available_select_action]
         selected = self.behavior_policy.select(torch.stack([available], dim=0))
-        mask = torch.tensor([n in available_select_action for n in range(len(output[0]))])
-        return torch.logical_and((output == available[selected])[0], mask).nonzero().item()
+        return available_select_action[selected]
 
     def save(self, kind) -> None:
-        torch.save(self.value_net.state_dict(), "output/{}.pth".format(kind))
+        torch.save(self.value_net.to('cpu').state_dict(), "output/{}.pth".format(kind))
 
 
 class RandomAgent(object):
+    def learning(self):
+        pass
+
     def select(self, state, available_select_action) -> int:
         return random.choice(available_select_action)
+
+    def change_last_reward(self, reward) -> None:
+        pass
+
+    def save(self, kind) -> None:
+        pass
 
 
 class TestAgent(object):
@@ -94,8 +102,7 @@ class TestAgent(object):
         print(output)
         available = output[0][available_select_action]
         selected = self.policy.select(torch.stack([available], dim=0))
-        mask = torch.tensor([n in available_select_action for n in range(len(output[0]))])
-        return torch.logical_and((output == available[selected])[0], mask).nonzero().item()
+        return available_select_action[selected]
 
 
 class ReplayBuffer(object):
