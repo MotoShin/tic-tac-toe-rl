@@ -65,7 +65,7 @@ class Agent(object):
 
     def select(self, state, available_select_action) -> int:
         with torch.no_grad():
-            state = Variable(torch.from_numpy(state))
+            state = Variable(torch.from_numpy(state)).to(DEVICE)
             output = self.value_net(NetworkUtil.to_binary(state))
         available = output[0][available_select_action]
         selected = self.behavior_policy.select(torch.stack([available], dim=0))
