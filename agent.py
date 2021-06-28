@@ -69,6 +69,7 @@ class Agent(object):
             output = self.value_net(NetworkUtil.to_binary(state))
         available = output[0][available_select_action]
         selected = self.behavior_policy.select(torch.stack([available], dim=0))
+        # TODO: もうちょっといい感じに実装する
         mask = torch.tensor([n in available_select_action for n in range(len(output[0]))])
         return torch.logical_and((output == available[selected])[0], mask).nonzero().item()
 
