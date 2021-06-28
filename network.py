@@ -35,7 +35,7 @@ class NetworkUtil(object):
     def to_binary(lst: torch.Tensor) -> torch.tensor:
         mask = 2 ** torch.arange(2).to(lst.device, lst.dtype)
         binary = lst.unsqueeze(-1).bitwise_and(mask).ne(0).byte()
-        return torch.reshape(binary, (-1, FIELD_SIZE * FIELD_SIZE * 2)).float().to(DEVICE)
+        return Variable(torch.reshape(binary, (-1, FIELD_SIZE * FIELD_SIZE * 2)).float())
 
 class Variable(autograd.Variable):
     def __init__(self, data, *args, **kwargs) -> None:
