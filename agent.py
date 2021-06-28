@@ -91,9 +91,11 @@ class TestAgent(object):
         with torch.no_grad():
             state = Variable(torch.from_numpy(state))
             output = self.value_net(NetworkUtil.to_binary(state))
+        print(output)
         available = output[0][available_select_action]
         selected = self.policy.select(torch.stack([available], dim=0))
-        return (output == available[selected])[0].nonzero().item()
+        mask = torch.tensor([n in available_select_action for n in range(len(output[0]))])
+        return torch.logical_and((output == available[selected])[0], mask).nonzero().item()
 
 
 class ReplayBuffer(object):
