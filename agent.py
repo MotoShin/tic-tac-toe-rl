@@ -36,6 +36,7 @@ class Agent(object):
         if torch.cuda.is_available():
             act_batch = act_batch.cuda()
             rew_batch = rew_batch.cuda()
+            not_done_mask = not_done_mask.cuda()
 
         # Q values
         self.value_net.eval()
