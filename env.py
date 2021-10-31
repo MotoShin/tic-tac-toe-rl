@@ -3,7 +3,7 @@ import enum
 import numpy as np
 import random
 
-ActionResult = (np.ndarray, float, bool, enum)
+ActionResult = (np.ndarray, float, bool, enum, enum)
 
 class TicTacToe(object):
     def __init__(self, length=3) -> None:
@@ -16,13 +16,22 @@ class TicTacToe(object):
     def step(self, action) -> ActionResult:
         '''
         input: これから打つ升目
-        return: フィールドの状況, 報酬, 終了フラグ, どっちのターンだったか
+        return: フィールドの状況, 報酬, 終了フラグ, どっちのターンだったか, 次のターンプレーヤー
         '''
         # CROSS is first
         if (self.step_count % 2 == 0):
             square_state = SquareState.CROSS
+            turn_player = Agents.CROSS
+            next_player = Agents.CIRCLE
         else:
             square_state = SquareState.CIRCLE
+            turn_player = Agents.CIRCLE
+            next_player = Agents.CROSS
+
+        # もうすでに打たれているマス目を選択した場合はペナルティ報酬を与えてもう一度行動させる
+        disavailable = self.get_disavailable_select_actions()
+        if (action in disavailable):
+            return (TicTacToe._enum_to_number(self.field), -10, False, turn_player, turn_player)
 
         self.field[action] = square_state
 
@@ -41,15 +50,15 @@ class TicTacToe(object):
             done = False
 
         self.step_count += 1
-        return (TicTacToe._enum_to_number(self.field), reward, done, square_state)
+        return (TicTacToe._enum_to_number(self.field), reward, done, turn_player, next_player)
 
     def reset(self) -> np.ndarray:
         self.field = np.array([SquareState.NOTHING for _ in range(self.row*self.col)])
         self.step_count = 0
         return TicTacToe._enum_to_number(self.field)
 
-    def get_available_select_action(self) -> list:
-        return np.where(self.field == SquareState.NOTHING)[0]
+    def get_disavailable_select_actions(self) -> list:
+        return np.where(self.field != SquareState.NOTHING)[0]
 
     def get_field(self):
         return TicTacToe._enum_to_number(self.field)
@@ -122,6 +131,9 @@ class ResultStatus(Enum):
     DRAW = 1
     WIN = 2
 
+class Agents(Enum):
+    CROSS = "cross"
+    CIRCLE = "circle"
 
 def main():
     env = TicTacToe()

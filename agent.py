@@ -68,13 +68,12 @@ class Agent(object):
     def change_last_reward(self, reward) -> None:
         self.memory.reward[-1] = reward
 
-    def select(self, state, available_select_action) -> int:
+    def select(self, state) -> int:
         with torch.no_grad():
             state = Variable(NetworkUtil.to_binary(torch.from_numpy(state)))
             output = self.value_net(state)
-        available = output[0][available_select_action]
-        selected = self.behavior_policy.select(torch.stack([available], dim=0))
-        return available_select_action[selected]
+        selected = self.behavior_policy.select(output)
+        return selected
 
     def save(self, kind) -> None:
         torch.save(self.value_net.to('cpu').state_dict(), "output/{}.pth".format(kind))
