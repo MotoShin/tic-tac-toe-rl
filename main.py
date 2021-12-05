@@ -38,31 +38,37 @@ class LeraningSimulation(object):
             # 先行はバツ
             next_player = Agents.CROSS
             while True:
-                next_player, turn_player, done, draw_flg = self._one_turn(next_player)
-                self.agents[turn_player].learning()
+                next_player, turn_player, done, draw_flg, miss = self._one_turn(next_player)
                 
                 if done:
-                    if not draw_flg:
+                    if not draw_flg and not miss:
                         # 勝負がついた場合、負けたplayerの最終報酬を-1.0に更新
                         self.agents[next_player].change_last_reward(-1.0)
+                    
+                    # 勝負がついた場合はどちらも学習を行う
+                    self.agents[Agents.CROSS].learning()
+                    self.agents[Agents.CIRCLE].learning()
                     episode_done = True
                     break
+
+                # 相手の行動した結果が確定したら学習を行う
+                # self.agents[next_player].learning()
 
         if draw_flg:
             # 引き分けなら1
             return 1
         else:
             if turn_player is Agents.CROSS:
-                # バツ勝利は0
-                return 0
+                # バツ勝利は0、打たれているマス目に打った場合マルの勝利
+                return 0 if miss else 2
             elif turn_player is Agents.CIRCLE:
-                # マル勝利は2
-                return 2
+                # マル勝利は2、打たれているマス目に打った場合バツの勝利
+                return 2 if miss else 0
 
     def _one_turn(self, turn_agent):
         action = self.agents[turn_agent].select(self.state)
 
-        next_state, reward, done, turn_player, next_turn_player = self.env.step(action)
+        next_state, reward, done, miss, turn_player, next_turn_player = self.env.step(action)
 
         if turn_agent is not turn_player:
             # simulationのturn_agentとenvのturn playerが一致していない場合はエラー
@@ -74,10 +80,10 @@ class LeraningSimulation(object):
         self.state = next_state
 
         draw_flg = True
-        if reward == 1.0:
+        if reward == 1.0 or miss:
             draw_flg = False
 
-        return next_turn_player, turn_player, done, draw_flg
+        return next_turn_player, turn_player, done, draw_flg, miss
 
     def _make_csv(self, lst, kind, file_name):
         csv_lst = []

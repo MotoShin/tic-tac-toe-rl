@@ -28,10 +28,10 @@ class TicTacToe(object):
             turn_player = Agents.CIRCLE
             next_player = Agents.CROSS
 
-        # もうすでに打たれているマス目を選択した場合はペナルティ報酬を与えてもう一度行動させる
+        # もうすでに打たれているマス目を選択した場合は負け
         disavailable = self.get_disavailable_select_actions()
         if (action in disavailable):
-            return (TicTacToe._enum_to_number(self.field), -10, False, turn_player, turn_player)
+            return (TicTacToe._enum_to_number(self.field), -1.0, True, True, turn_player, turn_player)
 
         self.field[action] = square_state
 
@@ -50,12 +50,15 @@ class TicTacToe(object):
             done = False
 
         self.step_count += 1
-        return (TicTacToe._enum_to_number(self.field), reward, done, turn_player, next_player)
+        return (TicTacToe._enum_to_number(self.field), reward, done, False, turn_player, next_player)
 
     def reset(self) -> np.ndarray:
         self.field = np.array([SquareState.NOTHING for _ in range(self.row*self.col)])
         self.step_count = 0
         return TicTacToe._enum_to_number(self.field)
+
+    def get_available_select_action(self) -> list:
+        return np.where(self.field == SquareState.NOTHING)[0]
 
     def get_disavailable_select_actions(self) -> list:
         return np.where(self.field != SquareState.NOTHING)[0]
