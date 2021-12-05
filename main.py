@@ -21,6 +21,10 @@ class LeraningSimulation(object):
         for sim in trange(SIMULATION_NUM, desc='simulation loop'):
             self.env = TicTacToe()
             self.agents = {Agents.CROSS: Agent(), Agents.CIRCLE: Agent()}
+            self.agents = {Agents.CROSS: Agent(), Agents.CIRCLE: Agent()}
+            if is_random:
+                print("use random agent.")
+                self.agents = {Agents.CROSS: RandomAgent(), Agents.CIRCLE: Agent()}
             self.sim_result = []
             self._one_simulation()
             result.append(self.sim_result)
@@ -81,9 +85,9 @@ class LeraningSimulation(object):
 
         self.state = next_state
 
-        draw_flg = True
-        if reward > 0.0 or miss:
-            draw_flg = False
+        draw_flg = False
+        if reward == 0.0:
+            draw_flg = True
 
         return next_turn_player, turn_player, done, draw_flg, miss
 
