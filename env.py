@@ -40,13 +40,13 @@ class TicTacToe(object):
         done = False
         reward = 0.0
         if result_status == ResultStatus.DRAW:
-            reward = 1.0
+            reward = 0.0
             done = True
         elif result_status == ResultStatus.WIN:
-            reward = 2.0
+            reward = 1.0
             done = True
         else:
-            reward = 0.0
+            reward = -1.0
             done = False
 
         self.step_count += 1
