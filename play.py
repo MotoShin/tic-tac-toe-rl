@@ -79,7 +79,7 @@ def main():
         # agentの行動
         if input_state == SquareState.CIRCLE and not done:
             time.sleep(1)
-            action = agent.select(state, env.get_available_select_action())
+            action = agent.select(state)
             state, _, done, _, _, _ = env.step(action)
             field[action].state = SquareState.CIRCLE
             input_state = SquareState.CROSS
