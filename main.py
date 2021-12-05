@@ -82,7 +82,7 @@ class LeraningSimulation(object):
         self.state = next_state
 
         draw_flg = True
-        if reward == 1.0 or miss:
+        if reward > 0.0 or miss:
             draw_flg = False
 
         return next_turn_player, turn_player, done, draw_flg, miss

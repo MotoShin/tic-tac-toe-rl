@@ -3,7 +3,7 @@ import enum
 import numpy as np
 import random
 
-ActionResult = (np.ndarray, float, bool, enum, enum)
+ActionResult = (np.ndarray, float, bool, bool, enum, enum)
 
 class TicTacToe(object):
     def __init__(self, length=3) -> None:
@@ -43,7 +43,7 @@ class TicTacToe(object):
             reward = 0.0
             done = True
         elif result_status == ResultStatus.WIN:
-            reward = 1.0
+            reward = 10.0
             done = True
         else:
             reward = -1.0
