@@ -1,4 +1,3 @@
-from enum import Enum
 import sys
 from agent import Agent, RandomAgent
 from env import TicTacToe, Agents
@@ -8,9 +7,12 @@ from tqdm import trange
 
 
 class LeraningSimulation(object):
-    def __init__(self) -> None:
+    def __init__(self, is_random) -> None:
         self.env = TicTacToe()
         self.agents = {Agents.CROSS: Agent(), Agents.CIRCLE: Agent()}
+        if is_random:
+            print("use random agent.")
+            self.agents = {Agents.CROSS: RandomAgent(), Agents.CIRCLE: Agent()}
         self.state = None
         self.sim_result = []
 
@@ -105,4 +107,10 @@ class LeraningSimulation(object):
 
 
 if __name__ == '__main__':
-    LeraningSimulation().start()
+    if sys.argv[1] is None:
+        is_random = False
+    elif sys.argv[1] == "random":
+        is_random = True
+    else:
+        is_random = False
+    LeraningSimulation(is_random).start()

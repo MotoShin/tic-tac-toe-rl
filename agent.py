@@ -5,6 +5,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 from collections import deque
+from env import SquareState
 from network import DqnNetwork, NetworkUtil, Variable
 from setting import *
 
@@ -82,7 +83,8 @@ class RandomAgent(object):
     def learning(self):
         pass
 
-    def select(self, state, available_select_action) -> int:
+    def select(self, state) -> int:
+        available_select_action = [i for i, x in enumerate(state) if x == SquareState.NOTHING.value]
         return random.choice(available_select_action)
 
     def change_last_reward(self, reward) -> None:
