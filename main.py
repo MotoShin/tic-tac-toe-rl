@@ -107,7 +107,7 @@ class LeraningSimulation(object):
 
 
 if __name__ == '__main__':
-    if len(sys.argv[1]) != 2:
+    if len(sys.argv) != 2:
         is_random = False
     elif sys.argv[1] == "random":
         is_random = True
