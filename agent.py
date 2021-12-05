@@ -39,20 +39,19 @@ class Agent(object):
             not_done_mask = not_done_mask.cuda()
 
         # Q values
-        self.value_net.eval()
         current_Q_values = self.value_net(NetworkUtil.to_binary(obs_batch)).gather(1, act_batch.unsqueeze(1)).squeeze(1)
         # target Q values
-        self.target_net.eval()
         next_max_Q = self.target_policy.select(self.target_net(NetworkUtil.to_binary(next_obs_batch)))
         next_Q_values = not_done_mask * next_max_Q
         target_Q_values = rew_batch + (GAMMA * next_Q_values)
         # loss
-        self.value_net.train()
         loss = F.smooth_l1_loss(current_Q_values.float(), target_Q_values.float())
 
         # optimize
         self.optimizer.zero_grad()
         loss.backward()
+        for param in self.value_net.parameters():
+            param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
         if self.learning_count % 100 == 0:
