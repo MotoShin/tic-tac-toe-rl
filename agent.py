@@ -167,7 +167,7 @@ class Egreedy(object):
         sample = random.random()
         value = self._shcedule()
 
-        if sample < value:
+        if sample > value:
             selected = Greedy.select(lst)
         else:
             selected = random.randrange(len(lst[0]))
