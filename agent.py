@@ -99,15 +99,13 @@ class TestAgent(object):
         self.value_net.load_state_dict(torch.load(path, map_location=DEVICE))
         self.policy = Greedy
 
-    def select(self, state, available_select_action) -> int:
+    def select(self, state) -> int:
         with torch.no_grad():
-            state = Variable(torch.from_numpy(state))
-            output = self.value_net(NetworkUtil.to_binary(state))
+            state = Variable(NetworkUtil.to_binary(torch.from_numpy(state)))
+            output = self.value_net(state)
         print(output)
-        available = output[0][available_select_action]
-        selected = self.policy.select(torch.stack([available], dim=0))
-        return available_select_action[selected]
-
+        selected = self.policy.select(output)
+        return selected
 
 class ReplayBuffer(object):
     def __init__(self, size) -> None:
@@ -169,7 +167,7 @@ class Egreedy(object):
         sample = random.random()
         value = self._shcedule()
 
-        if sample > value:
+        if sample < value:
             selected = Greedy.select(lst)
         else:
             selected = random.randrange(len(lst[0]))
