@@ -9,13 +9,13 @@ from secrets import *
 class DqnNetwork(nn.Module):
     def __init__(self):
         super(DqnNetwork, self).__init__()
-        self.model = nn.Sequential(nn.Linear(FIELD_SIZE * FIELD_SIZE * 2, FIELD_SIZE * FIELD_SIZE * 13),
+        self.model = nn.Sequential(nn.Linear(FIELD_SIZE * FIELD_SIZE * 2, (FIELD_SIZE * FIELD_SIZE * 2)**2),
                                                 nn.ReLU(),
-                                                nn.Linear(FIELD_SIZE * FIELD_SIZE * 13, FIELD_SIZE * FIELD_SIZE * 13),
+                                                nn.Linear((FIELD_SIZE * FIELD_SIZE * 2)**2, (FIELD_SIZE * FIELD_SIZE * 2)**2),
                                                 nn.ReLU(),
-                                                nn.Linear(FIELD_SIZE * FIELD_SIZE * 13, FIELD_SIZE * FIELD_SIZE * 13),
+                                                nn.Linear((FIELD_SIZE * FIELD_SIZE * 2)**2, (FIELD_SIZE * FIELD_SIZE * 2)**2),
                                                 nn.ReLU(),
-                                                nn.Linear(FIELD_SIZE * FIELD_SIZE * 13, FIELD_SIZE * FIELD_SIZE))
+                                                nn.Linear((FIELD_SIZE * FIELD_SIZE * 2)**2, FIELD_SIZE * FIELD_SIZE))
 
     def forward(self, x):
         return self.model(x)

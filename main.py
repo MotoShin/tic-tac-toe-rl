@@ -1,76 +1,95 @@
+import sys
 from agent import Agent, RandomAgent
-from env import TicTacToe
+from env import TicTacToe, Agents
 import pandas as pd
 from setting import *
 from tqdm import trange
 
 
 class LeraningSimulation(object):
-    def __init__(self) -> None:
+    def __init__(self, is_random) -> None:
         self.env = TicTacToe()
-        self.agents = {"Cross": Agent(), "Circle": Agent()}
+        self.agents = {Agents.CROSS: Agent(), Agents.CIRCLE: Agent()}
+        if is_random:
+            print("use random agent.")
+            self.agents = {Agents.CROSS: RandomAgent(), Agents.CIRCLE: Agent()}
         self.state = None
         self.sim_result = []
 
     def start(self):
         result = []
         for sim in trange(SIMULATION_NUM, desc='simulation loop'):
-            self.agents = {"Cross": Agent(), "Circle": Agent()}
+            self.env = TicTacToe()
+            self.agents = {Agents.CROSS: Agent(), Agents.CIRCLE: Agent()}
+            self.agents = {Agents.CROSS: Agent(), Agents.CIRCLE: Agent()}
+            if is_random:
+                print("use random agent.")
+                self.agents = {Agents.CROSS: RandomAgent(), Agents.CIRCLE: Agent()}
             self.sim_result = []
             self._one_simulation()
             result.append(self.sim_result)
         self._make_csv(result, "result", "result.csv")
-        self.agents["Cross"].save("cross")
-        self.agents["Circle"].save("circle")
+        self.agents[Agents.CROSS].save(Agents.CROSS.value)
+        self.agents[Agents.CIRCLE].save(Agents.CIRCLE.value)
 
     def _one_simulation(self):
-        for epi in trange(EPISODE_NUM, desc='episode loop', leave=False):
+        for _ in trange(EPISODE_NUM, desc='episode loop', leave=False):
             self.state = self.env.reset()
-            self.sim_result.append(self._one_episode(epi))
+            self.sim_result.append(self._one_episode())
 
-    def _one_episode(self, epi):
-        done = False
-        while not done:
-            # 引き分けなら1
-            result = 1
+    def _one_episode(self):
+        episode_done = False
 
+        while not episode_done:
             # 先行はバツ
-            action = self.agents["Cross"].select(self.state, self.env.get_available_select_action())
-            next_state, reward, done, _ = self.env.step(action)
-            self.agents["Cross"].save_memory(self.state, action, reward, next_state, done)
+            next_player = Agents.CROSS
+            while True:
+                next_player, turn_player, done, draw_flg, miss = self._one_turn(next_player)
+                
+                if done:
+                    if not draw_flg and not miss:
+                        # 勝負がついた場合、負けたplayerの最終報酬を-1.0に更新
+                        self.agents[next_player].change_last_reward(-1.0)
+                    
+                    # 勝負がついた場合はどちらも学習を行う
+                    self.agents[Agents.CROSS].learning()
+                    self.agents[Agents.CIRCLE].learning()
+                    episode_done = True
+                    break
 
-            if done:
-                if reward == 2.0:
-                    # バツが勝つと0
-                    result = 0
-                    self.agents["Circle"].change_last_reward(-1.0)
-                self.agents["Cross"].learning()
-                self.agents["Circle"].learning()
-                return result
+                # 相手の行動した結果が確定したら学習を行う
+                # self.agents[next_player].learning()
 
-            if epi == 0:
-                # 初回はなにも行動していないので学習もしない
-                self.agents["Circle"].learning()
+        if draw_flg:
+            # 引き分けなら1
+            return 1
+        else:
+            if turn_player is Agents.CROSS:
+                # バツ勝利は0、打たれているマス目に打った場合マルの勝利
+                return 0 if miss else 2
+            elif turn_player is Agents.CIRCLE:
+                # マル勝利は2、打たれているマス目に打った場合バツの勝利
+                return 2 if miss else 0
 
-            self.state = next_state
+    def _one_turn(self, turn_agent):
+        action = self.agents[turn_agent].select(self.state)
 
-            # 後攻はマル
-            action = self.agents["Circle"].select(self.state, self.env.get_available_select_action())
-            next_state, reward, done, _ = self.env.step(action)
-            self.agents["Circle"].save_memory(self.state, action, reward, next_state, done)
+        next_state, reward, done, miss, turn_player, next_turn_player = self.env.step(action)
 
-            if done:
-                if reward == 2.0:
-                    # マルが勝つと2
-                    result = 2
-                    self.agents["Cross"].change_last_reward(-1.0)
-                self.agents["Cross"].learning()
-                self.agents["Circle"].learning()
-                return result
+        if turn_agent is not turn_player:
+            # simulationのturn_agentとenvのturn playerが一致していない場合はエラー
+            print("Error: different turn player.")
+            sys.exit(1)
 
-            self.agents["Cross"].learning()
+        self.agents[turn_agent].save_memory(self.state, action, reward, next_state, done)
 
-            self.state = next_state
+        self.state = next_state
+
+        draw_flg = False
+        if reward == 0.0:
+            draw_flg = True
+
+        return next_turn_player, turn_player, done, draw_flg, miss
 
     def _make_csv(self, lst, kind, file_name):
         csv_lst = []
@@ -92,4 +111,10 @@ class LeraningSimulation(object):
 
 
 if __name__ == '__main__':
-    LeraningSimulation().start()
+    if len(sys.argv) != 2:
+        is_random = False
+    elif sys.argv[1] == "random":
+        is_random = True
+    else:
+        is_random = False
+    LeraningSimulation(is_random).start()

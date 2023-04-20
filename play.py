@@ -79,8 +79,8 @@ def main():
         # agentの行動
         if input_state == SquareState.CIRCLE and not done:
             time.sleep(1)
-            action = agent.select(state, env.get_available_select_action())
-            state, _, done, _ = env.step(action)
+            action = agent.select(state)
+            state, _, done, _, _, _ = env.step(action)
             field[action].state = SquareState.CIRCLE
             input_state = SquareState.CROSS
 
@@ -91,7 +91,7 @@ def main():
                 for n in range(len(field)):
                     if field[n].isBlank() and x in field[n].x_range and y in field[n].y_range:
                         field[n].state = input_state
-                        state, _, done, _ = env.step(n)
+                        state, _, done, _, _, _ = env.step(n)
                         input_state = SquareState.CIRCLE
                         break
 

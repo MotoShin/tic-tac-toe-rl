@@ -5,6 +5,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 from collections import deque
+from env import SquareState
 from network import DqnNetwork, NetworkUtil, Variable
 from setting import *
 
@@ -39,20 +40,19 @@ class Agent(object):
             not_done_mask = not_done_mask.cuda()
 
         # Q values
-        self.value_net.eval()
         current_Q_values = self.value_net(NetworkUtil.to_binary(obs_batch)).gather(1, act_batch.unsqueeze(1)).squeeze(1)
         # target Q values
-        self.target_net.eval()
         next_max_Q = self.target_policy.select(self.target_net(NetworkUtil.to_binary(next_obs_batch)))
         next_Q_values = not_done_mask * next_max_Q
         target_Q_values = rew_batch + (GAMMA * next_Q_values)
         # loss
-        self.value_net.train()
         loss = F.smooth_l1_loss(current_Q_values.float(), target_Q_values.float())
 
         # optimize
         self.optimizer.zero_grad()
         loss.backward()
+        for param in self.value_net.parameters():
+            param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
         if self.learning_count % 100 == 0:
@@ -68,13 +68,12 @@ class Agent(object):
     def change_last_reward(self, reward) -> None:
         self.memory.reward[-1] = reward
 
-    def select(self, state, available_select_action) -> int:
+    def select(self, state) -> int:
         with torch.no_grad():
             state = Variable(NetworkUtil.to_binary(torch.from_numpy(state)))
             output = self.value_net(state)
-        available = output[0][available_select_action]
-        selected = self.behavior_policy.select(torch.stack([available], dim=0))
-        return available_select_action[selected]
+        selected = self.behavior_policy.select(output)
+        return selected
 
     def save(self, kind) -> None:
         torch.save(self.value_net.to('cpu').state_dict(), "output/{}.pth".format(kind))
@@ -84,7 +83,8 @@ class RandomAgent(object):
     def learning(self):
         pass
 
-    def select(self, state, available_select_action) -> int:
+    def select(self, state) -> int:
+        available_select_action = [i for i, x in enumerate(state) if x == SquareState.NOTHING.value]
         return random.choice(available_select_action)
 
     def change_last_reward(self, reward) -> None:
@@ -100,15 +100,13 @@ class TestAgent(object):
         self.value_net.load_state_dict(torch.load(path, map_location=DEVICE))
         self.policy = Greedy
 
-    def select(self, state, available_select_action) -> int:
+    def select(self, state) -> int:
         with torch.no_grad():
-            state = Variable(torch.from_numpy(state))
-            output = self.value_net(NetworkUtil.to_binary(state))
+            state = Variable(NetworkUtil.to_binary(torch.from_numpy(state)))
+            output = self.value_net(state)
         print(output)
-        available = output[0][available_select_action]
-        selected = self.policy.select(torch.stack([available], dim=0))
-        return available_select_action[selected]
-
+        selected = self.policy.select(output)
+        return selected
 
 class ReplayBuffer(object):
     def __init__(self, size) -> None:
